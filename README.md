@@ -110,6 +110,44 @@ if Mix.env == :dev do
 end
 ```
 
+## Disabling ansi_enabled setting
+
+The config `:ansi_enabled` is defaulted to `true` which will force the 
+console to have [ANSI coloring](https://hexdocs.pm/elixir/IO.ANSI.html#enabled?).  
+
+If Elixir can detect during startup that both `stdout` and `stderr` are terminals,
+then you set the value `:ignore`, for example shown below.
+
+```elixir
+# config/config.exs
+use Mix.Config
+
+if Mix.env == :dev do
+  config :mix_test_watch,
+    :ansi_enabled :ignore
+end
+```
+
+You might want to consider this setting when running tests that require a database. 
+The suggested approach is to create an alias in your mix.exs file, like
+
+```elixir
+  def aliases() do
+    ["test": ["ecto.drop --quiet", "ecto.create --quiet", "ecto.migrate", "test"]]
+  end
+```
+
+Unfortunately, when you run `test.watch` (without setting the `:ansi_enabled` value 
+to `:ignore`) you will probably observe the following error
+
+```bash
+** (Mix) The database for MyApp.Repo couldn't be dropped:
+ERROR 55006 (object_in_use): database "myapp_test"
+is being accessed by other users
+
+There are 99 other sessions using the database.
+```
+
 ## Compatibility Notes
 
 On Linux you may need to install `inotify-tools`.
