@@ -10,6 +10,7 @@ defmodule MixTestWatch.Config do
   @default_exclude []
   @default_extra_extensions []
   @default_cli_executable "mix"
+  @default_ansi_enabled true
 
 
   defstruct tasks:            @default_tasks,
@@ -19,6 +20,7 @@ defmodule MixTestWatch.Config do
             exclude:          @default_exclude,
             extra_extensions: @default_extra_extensions,
             cli_executable:   @default_cli_executable,
+            ansi_enabled:     @default_ansi_enabled,
             cli_args:         []
 
   @spec new([String.t]) :: %__MODULE__{}
@@ -33,6 +35,7 @@ defmodule MixTestWatch.Config do
       runner:            get_runner(),
       exclude:           get_excluded(),
       cli_executable:    get_cli_executable(),
+      ansi_enabled:      get_ansi_enabled(),
       cli_args:          cli_args,
       extra_extensions:  get_extra_extensions(),
     }
@@ -62,6 +65,11 @@ defmodule MixTestWatch.Config do
   defp get_cli_executable do
     Application.get_env(:mix_test_watch, :cli_executable,
                         @default_cli_executable)
+  end
+
+  defp get_ansi_enabled do
+    Application.get_env(:mix_test_watch, :ansi_enabled,
+                        @default_ansi_enabled)
   end
 
   defp get_extra_extensions do
