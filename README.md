@@ -18,7 +18,7 @@ Add it to your dependencies:
 ```elixir
 # mix.exs (Elixir 1.4)
 def deps do
-  [{:mix_test_watch, "~> 0.3", only: :dev, runtime: false}]  
+  [{:mix_test_watch, "~> 0.3", only: :dev, runtime: false}]
 end
 ```
 
@@ -59,10 +59,65 @@ if Mix.env == :dev do
 end
 ```
 
-Tasks are run in the order they appear in the list, and the progression will
-stop if any command returns a non-zero exit code.
+## Running Additional Mix Tasks On Start Up
 
-All tasks are run with `MIX_ENV` set to `test`.
+When running tests that require a database, you might run into an issue where your test
+database is not properly created before the tests are run.
+
+```bash
+[error] Postgrex.Protocol (#PID<0.221.0>) failed to connect:
+** (Postgrex.Error) FATAL 3D000 (invalid_catalog_name):
+database "myapp_test" does not exist
+```
+
+The suggested approach is to create an alias in your mix.exs file, like
+
+```elixir
+  def aliases() do
+    ["test": ["ecto.drop --quiet", "ecto.create --quiet", "ecto.migrate", "test"]]
+  end
+```
+
+Unfortunately, for test.watch you will probably observe the following error
+
+```bash
+** (Mix) The database for MyApp.Repo couldn't be dropped:
+ERROR 55006 (object_in_use): database "myapp_test"
+is being accessed by other users
+
+There are 99 other sessions using the database.
+```
+
+To get around this, consider changing your alias to
+
+```elixir
+  def aliases() do
+    ["test.once": ["ecto.drop --quiet", "ecto.create --quiet", "ecto.migrate", "test"]]
+  end
+```
+
+And then take advantage of configuring your `setup_tasks` to ensure your database
+is properly configured before running the tests.  But, only running them on startup.
+
+
+```elixir
+# config/config.exs
+use Mix.Config
+
+if Mix.env == :dev do
+  config :mix_test_watch,
+    setup_tasks: [
+      "ecto.drop --quiet",
+      "ecto.create --quiet",
+      "ecto.migrate"
+    ]
+end
+```
+
+Setup tasks are run in the order they appear in the list, and the progression will
+stop if any command returns a non-zero exit code.  They will only run once.
+
+All setup tasks are run with `MIX_ENV` set to `test`.
 
 
 ## Passing Arguments To Tasks
